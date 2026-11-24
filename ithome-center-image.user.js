@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         正文居中 + 图片缩放浏览
+// @name         IT之家披图-猹王
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  正文与评论区统一居中、宽度 680px；正文图片默认 40%，悬停 60%，按住 92%
 // @author       猹王
 // @license      MIT
