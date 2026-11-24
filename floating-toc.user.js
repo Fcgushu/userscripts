@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         通用悬浮 TOC 目录
+// @name         钩玄书目-猹王
 // @namespace    workbuddy.wbtoc
-// @version      1.2.0
+// @version      1.2.1
 // @description  在大部分网页上生成悬浮目录：按标题层级自动生成（不显示页面主标题）、跟随滚动高亮、自动避让已有目录/回顶控件、默认停靠右缘垂直居中、可拖动/拉伸宽高、内置设置面板（字号/宽度/高度/固定常显/层级编号/深色面板）。默认不启用，需在油猴菜单中按站点开启。
 // @author       WorkBuddy
 // @match        *://*/*
