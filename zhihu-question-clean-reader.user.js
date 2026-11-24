@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         清爽阅读（知乎问题页）
+// @name         知乎问渠-猹王
 // @namespace    local.cleanreader
-// @version      1.0.1
+// @version      1.0.2
 // @author       猹王
 // @description  知乎问题页压成一列居中白卡，清除顶栏/浮层/侧栏/推荐/页脚，行距优化，图片点击放大
 // @match        https://www.zhihu.com/question/*
