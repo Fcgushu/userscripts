@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         清爽阅读（龙爪槐守望者 ftium4.com）
+// @name         龙槐卧游-猹王
 // @namespace    local.cleanreader
-// @version      1.0.1
+// @version      1.0.2
 // @description  正文压成一列居中白卡，清除导航/侧栏/分享/上下篇/评论/页脚等干扰，行距优化，图片点击放大
 // @author       猹王
 // @match        https://www.ftium4.com/*
