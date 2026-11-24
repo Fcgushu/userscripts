@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         头条清爽阅读（700px 居中）
+// @name         头条清读-猹王
 // @namespace    local.toutiao.reader
-// @version      6.0.1
+// @version      6.0.2
 // @author       猹王
 // @description  www.toutiao.com 文章/微头条页：正文压成一列 700px 居中白卡，字号保持站点原样，清掉导航/浮层/推荐/评论等一切干扰，图片点击放大
 // @match        https://www.toutiao.com/*
