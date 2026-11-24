@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         清爽阅读（豆瓣小组话题）
+// @name         豆瓣清谈-猹王
 // @namespace    local.cleanreader
-// @version      1.0.0
+// @version      1.0.1
 // @author       猹王
 // @description  豆瓣小组话题页：保留标题/作者/时间/正文，清除评论/回应/推荐/导航/浮层，正文居中白卡，缩放自适应
 // @match        https://www.douban.com/group/topic/*
