@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         头条清读-猹王
 // @namespace    local.toutiao.reader
-// @version      6.0.2
+// @version      6.0.4
 // @author       猹王
-// @description  www.toutiao.com 文章/微头条页：正文压成一列 700px 居中白卡，字号保持站点原样，清掉导航/浮层/推荐/评论等一切干扰，图片点击放大
+// @description  www.toutiao.com 文章/微头条页：正文压成一列 700px 居中白卡，字号保持站点原样，清掉导航/浮层/推荐/评论等一切干扰，图片点击放大；简悦阅读/聚焦模式自动让路；清除关注按钮与作者热门作品推荐
 // @match        https://www.toutiao.com/*
 // @run-at       document-idle
 // @grant        none
@@ -25,8 +25,37 @@
   function vw() { return document.documentElement.clientWidth; }
   function nText(el) { return (el.innerText || '').replace(/\s+/g, ''); }
   function textLen(el) { return nText(el).length; }
+
+  // ---------- 与简悦（SimpRead）共存 ----------
+  // 简悦会往页面里插 sr-* / .simpread-* 节点，并给 body 加 simpread-hidden 类。
+  // 这些节点一律不碰；进入阅读/聚焦模式时本脚本全部撤回并休眠，退出后自动恢复。
+  function isSimpread(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (/^sr-/i.test(el.tagName || '') || /^sr-/i.test(el.id || '')) return true;
+    var cls = (el.className && el.className.toString()) || '';
+    if (/(^|\s)simpread[\w-]*/i.test(cls)) return true;
+    if (el.closest && el.closest('.simpread-read-root,.simpread-focus-root,sr-rd-content,sr-rd-title,sr-rd-crlbar,#simpread')) return true;
+    return false;
+  }
+
+  function simpreadActive() {
+    if (!document.body) return false;
+    var cls = ((document.body.className || '') + ' ' + (document.documentElement.className || '')).toString();
+    if (/simp(?:read|led)[\w-]*-(?:read|focus|hidden)/i.test(cls)) return true;
+    var nodes = document.querySelectorAll('.simpread-read-root,.simpread-focus-root,sr-rd-content,sr-rd-title,sr-rd-crlbar,#simpread');
+    for (var i = 0; i < nodes.length; i++) {
+      var cs;
+      try { cs = getComputedStyle(nodes[i]); } catch (e) { continue; }
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      var r = nodes[i].getBoundingClientRect();
+      if (r.width > 40 && r.height > 40) return true;
+    }
+    return false;
+  }
+
   function hide(el) {
     if (!el || el.nodeType !== 1 || el.hasAttribute('data-tt700-hide')) return 0;
+    if (isSimpread(el)) return 0;   // 简悦的按钮/工具栏不藏
     el.setAttribute('data-tt700-hide', '');
     return 1;
   }
@@ -84,8 +113,25 @@
     return /(小视频|相关推荐|相关阅读|推荐阅读|热门推荐|为你推荐|猜你喜欢|查看更多|热门评论|全部评论|条评论|人参与|去首页|扫码下载)/.test(t);
   }
 
+  // 作者推广卡：关注按钮 + TA的热门作品 + 作品列表项。
+  // 这类块带作者链接，旧版会被当成正文保留，必须优先判掉。
+  // 文本很短才判，避免误伤正文里碰巧提到这些词的长段落。
+  function isAuthorPromo(el) {
+    if (!el || el.nodeType !== 1) return false;
+    var t = nText(el);
+    if (!t) return false;
+    if (t.length > 400) return false;
+    if (/^(关注|已关注|\+关注|\+ 关注)$/.test(t)) return true;
+    if (/(TA的热门作品|他的热门作品|TA的作品|他的作品|更多作品|TA的精选)/.test(t)) return true;
+    if (/^\d+\s*阅读\s*\d+\s*(小时|分钟|天|周|月)前$/.test(t)) return true;
+    if (/关注/.test(t) && el.querySelector('button') && el.querySelector('a[href*="/c/user/"]')) return true;
+    return false;
+  }
+
   function isJunk(el) {
     if (!el || el.nodeType !== 1) return false;
+    if (isSimpread(el)) return false;
+    if (isAuthorPromo(el)) return true;
     if (el.tagName === 'VIDEO') return true;
     if (el.querySelector('video')) return true;
     var t = nText(el);
@@ -183,8 +229,9 @@
   // 列内杂项
   function hideJunk(col) {
     var n = 0;
-    var nodes = col.querySelectorAll('div,section,ul,ol,li,figure,aside');
+    var nodes = col.querySelectorAll('div,section,ul,ol,li,figure,aside,button');
     for (var i = 0; i < nodes.length; i++) {
+      if (isSimpread(nodes[i])) continue;
       if (nodes[i].closest('[data-tt700-hide]')) continue;
       if (!isJunk(nodes[i])) continue;
       n += hide(nodes[i]);
@@ -248,6 +295,7 @@
 
   // 正文之后的一切（视频卡、小视频、推荐、评论、相关阅读）
   function keepAsContent(el) {
+    if (isAuthorPromo(el)) return false;   // 作者推广卡即便带作者链接也不算正文
     if (el.querySelector('a[href*="/c/user/"]')) return true;
     var blocks = el.querySelectorAll('p,div');
     for (var i = 0; i < blocks.length; i++) {
@@ -442,7 +490,7 @@
     var r = col.getBoundingClientRect();
     return {
       ok: true,
-      text: 'tt700 v6 | ' + location.pathname.slice(0, 22) + ' | vw ' + vw() +
+      text: 'tt700 v6.4 | ' + location.pathname.slice(0, 22) + ' | vw ' + vw() +
         ' | 卡 ' + Math.round(r.width) + ' L' + Math.round(r.left) + ' 偏移' + err +
         ' | 藏 ' + hidden + ' | 行高 ' + lined +
         ' | cls ' + (col.className || '').toString().slice(0, 28)
@@ -456,13 +504,13 @@
     if (!readPage()) {
       document.documentElement.removeAttribute('data-tt700-read');
       var f = applyFeed();
-      badge(f.ok ? ('tt700 v6 | 列表页 | vw ' + vw() + ' | 容器 ' + f.tag.length) : ('tt700 v6 | 列表页 未匹配 | vw ' + vw()));
+      badge(f.ok ? ('tt700 v6.4 | 列表页 | vw ' + vw() + ' | 容器 ' + f.tag.length) : ('tt700 v6.4 | 列表页 未匹配 | vw ' + vw()));
       return;
     }
 
     var out;
-    try { out = applyRead(); } catch (e) { out = { ok: false, text: 'tt700 v6 | 出错 ' + e.message }; }
-    badge(out.text || 'tt700 v6 | 未匹配正文');
+    try { out = applyRead(); } catch (e) { out = { ok: false, text: 'tt700 v6.4 | 出错 ' + e.message }; }
+    badge(out.text || 'tt700 v6.4 | 未匹配正文');
   }
 
   function badge(msg) {
@@ -522,6 +570,11 @@
   var lastRun = 0;
   function run() {
     lastRun = Date.now();
+    if (simpreadActive()) {   // 简悦接管期间，本脚本一行都别跑
+      if (!simpOn) { simpOn = true; resetAll(); badge('tt700 v6.4 | 简悦接管，清读暂停'); }
+      return;
+    }
+    if (simpOn) { simpOn = false; setTimeout(run, 360); }
     try { apply(); } catch (err) { /* 结构异常时不影响阅读 */ }
   }
 
@@ -569,6 +622,16 @@
     setTimeout(run, 1400);
   }
 
+  // 简悦状态轮询：进入阅读/聚焦模式 → 撤回本脚本全部改动；退出 → 自动恢复清读
+  var simpOn = false;
+  function watchSimpread() {
+    var on = simpreadActive();
+    if (on === simpOn) return;
+    simpOn = on;
+    if (on) { resetAll(); badge('tt700 v6.4 | 简悦接管，清读暂停'); }
+    else setTimeout(run, 400);
+  }
+
   var lastVW = vw(), lastDPR = window.devicePixelRatio || 1;
   function checkViewport() {
     var w = vw(), d = window.devicePixelRatio || 1;
@@ -583,8 +646,9 @@
   new MutationObserver(function () {
     if (Date.now() - lastRun < 700) return;
     schedule(400);
-  }).observe(document.body, { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   setInterval(watchUrl, 800);
+  setInterval(watchSimpread, 400);
   setInterval(checkViewport, 300);
   window.addEventListener('resize', function () {
     lastVW = vw(); lastDPR = window.devicePixelRatio || 1; schedule(60);
